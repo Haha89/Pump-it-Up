@@ -7,7 +7,6 @@ import torch.utils.data as data_utils
 
 
 DEVICE = "cuda" if cuda.is_available() else "cpu"
-DEVICE = "cpu"
 PATH_DATA = "../data/"
 
 dic = {0: "non functional", 1: "functional needs repair", 2: "functional"}
@@ -27,6 +26,7 @@ model.eval()
 preds = []
 
 for i, values in enumerate(test_loader):
+    print(values[0].shape)
     pred = model(stack(values).float())
     print(pred)
     _, predicted = max(pred.data, 1)

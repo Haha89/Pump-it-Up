@@ -2,6 +2,7 @@
 import pandas as pd
 import torch.nn as nn
 import torch.nn.functional as F
+from pickle import load, dump, HIGHEST_PROTOCOL
 
 
 def generate_report(dataframe, name="PumpItUp-EDA"):
@@ -40,15 +41,32 @@ def preprocessing_data(data, test=False):
                                          "quality_group", "quantity"])
 
     # Numerical values
-    for col in ["gps_height", "longitude", "latitude", "construction_year"]:
-        min_col = data[col].min()
-        data[col] = (data[col] - min_col)/(data[col].max() - min_col)
+    if not test:  # Training, save values
+        dic = {}
+        for cl in ["gps_height", "longitude", "latitude", "construction_year"]:
+            min_col = data[cl].min()
+            max_col = data[cl].max()
+            dic[cl] = {"min": min_col, "max": max_col}
+            data[cl] = (data[cl] - min_col)/(max_col - min_col)
+
+        with open('./prepro.pickle', 'wb') as handle:
+            dump(dic, handle, protocol=HIGHEST_PROTOCOL)
+
+    else:  # Testing, load values
+        with open('./prepro.pickle', 'rb') as handle:
+            dic = load(handle)
+
+        for cl in ["gps_height", "longitude", "latitude", "construction_year"]:
+            min_col = dic[cl]["min"]
+            max_col = dic[cl]["max"]
+            data[cl] = (data[cl] - min_col)/(max_col - min_col)
 
     if "status_group" in data.columns:
         dic = {"functional": 2,
                "functional needs repair": 1,
                "non functional": 0}
         data.status_group = data.status_group.map(dic)
+
     return data
 
 
