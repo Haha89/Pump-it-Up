@@ -23,8 +23,6 @@ if __name__ == "__main__":
     train_set = pd.concat([train_val, train_lab], axis=1)
 
     train_set = preprocessing_data(train_set)
-    # generate_report(train_set, "Prepro")
-    # train_set.to_csv("../preprocessed.csv")
 
     train_set, test_set = train_test_split(train_set, test_size=0.2)
 

@@ -9,9 +9,6 @@ import lightgbm as lgb
 if __name__ == "__main__":
 
     PATH_DATA = "../data/"
-    NB_EPOCHS = 30
-    LEARNING_RATE = 0.0001
-
     train_lab = pd.read_csv(PATH_DATA + 'train_labels.csv')["status_group"]
     train_val = pd.read_csv(PATH_DATA + 'train_values.csv')
 
@@ -23,8 +20,6 @@ if __name__ == "__main__":
 
     test_val = pd.read_csv(PATH_DATA + 'test_values.csv')
     test_val = preprocessing_data(test_val, test=True)
-    
-    print(train_set['status_group'].value_counts())
 
     # add extra columns missings in the test set
     for col in train.columns:
@@ -32,7 +27,8 @@ if __name__ == "__main__":
             test_val[col] = 0
     test_val = test_val[train.columns]
 
-    clf = lgb.LGBMClassifier(max_bin=600, learning_rate=0.02, num_leaves=150)
+    clf = lgb.LGBMClassifier(max_bin=1300, learning_rate=0.0085,
+                             num_leaves=150, num_iterations=1150)
     clf.fit(train.values, train_target)
 
     y_pred = clf.predict(test_val)
