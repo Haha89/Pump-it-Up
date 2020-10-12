@@ -15,7 +15,7 @@ if __name__ == "__main__":
     DEVICE = "cuda" if cuda.is_available() else "cpu"
     PATH_DATA = "../data/"
     NB_EPOCHS = 30
-    LEARNING_RATE = 0.0001
+    LEARNING_RATE = 0.001
 
     train_lab = pd.read_csv(PATH_DATA + 'train_labels.csv')["status_group"]
     train_val = pd.read_csv(PATH_DATA + 'train_values.csv')

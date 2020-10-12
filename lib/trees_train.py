@@ -4,6 +4,7 @@ import pandas as pd
 from utils import preprocessing_data
 import lightgbm as lgb
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import confusion_matrix
 
 if __name__ == "__main__":
 
@@ -25,12 +26,14 @@ if __name__ == "__main__":
 
     clf = lgb.LGBMClassifier( max_bin=1300,
                              learning_rate=0.0085, num_leaves=150,
-                             num_iterations=1150, objective="multiclass",
-                             boosting="rf", bagging_freq=1, bagging_fraction=0.8
+                             num_iterations=1150
+                             # , objective="multiclass",
+                             # boosting="rf", bagging_freq=1, bagging_fraction=0.8
                              )
     clf.fit(train.values, train_target)
     y_pred = clf.predict(test_val)
-
+    
+    print(confusion_matrix( test_target, y_pred))
     correct = 0
     for i, el in enumerate(test_target):
         if el == y_pred[i]:

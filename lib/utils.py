@@ -23,22 +23,26 @@ def preprocessing_data(data, test=False):
                "ward", "scheme_name", "wpt_name", "lga", "extraction_type",
                "extraction_type_group", "payment_type", "management",
                "water_quality", "quantity_group", "source", "source_class",
-               "waterpoint_type", "region", "permit", "population",
-               "public_meeting", "date_recorded", "management_group"],
+               "waterpoint_type",  "population",
+               "public_meeting", "management_group", "permit"],
               axis=1, inplace=True)
 
     # Replace missing values
     values = {'funder': "Unknown", 'installer': "DWE",
               'public_meeting': True, 'scheme_management': "VWC",
-              "construction_year": 1980}
+              "construction_year": 1980} #, "permit": True
     data.fillna(value=values)
-    data.at[data.construction_year == 0, "construction_year"] = 1980
+    
+    # data.permit = data.permit.astype(bool) 
+    
+    data.at[data.construction_year == 0, "construction_year"] = 1994
 
     # One hot encoding
     data = pd.get_dummies(data, columns=["source_type", "scheme_management",
                                          "payment", "extraction_type_class",
                                          "basin", "waterpoint_type_group",
-                                         "quality_group", "quantity"])
+                                         "quality_group", "quantity", "region"])
+    data.date_recorded = pd.DatetimeIndex(data.date_recorded).month
 
     # Numerical values
     if not test:  # Training, save values
@@ -74,10 +78,9 @@ def preprocessing_data(data, test=False):
 class Network(nn.Module):
     def __init__(self, input_dim):
         super(Network, self).__init__()
-        self.l1 = nn.Linear(input_dim, 256)
-        self.l2 = nn.Linear(256, 256)
-        self.l3 = nn.Linear(256, 256)
-        self.l4 = nn.Linear(256, 3)
+        self.l1 = nn.Linear(input_dim, 40)
+        self.l2 = nn.Linear(40, 40)
+        self.l4 = nn.Linear(40, 3)
         self.dropout1 = nn.Dropout2d(0.25)
 
     def forward(self, x):
@@ -86,8 +89,6 @@ class Network(nn.Module):
         x = self.l2(x)
         x = F.relu(x)
         x = self.dropout1(x)
-        x = self.l3(x)
-        x = F.relu(x)
+
         x = self.l4(x)
-        output = F.softmax(x, dim=1)
-        return output
+        return x
