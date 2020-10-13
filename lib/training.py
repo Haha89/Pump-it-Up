@@ -3,18 +3,19 @@
 """Script to generate an automatic report with dataset analysis"""
 
 import pandas as pd
-from utils import generate_report, preprocessing_data, Network
+from utils import preprocessing_data, Network
 from torch import tensor, cuda, max, unique, true_divide, save
 import torch.utils.data as data_utils
 import torch.nn as nn
 import torch.optim as optim
 from sklearn.model_selection import train_test_split
-
+from matplotlib.pyplot import show, figure, title, xlabel
+from matplotlib.ticker import MaxNLocator
 
 if __name__ == "__main__":
     DEVICE = "cuda" if cuda.is_available() else "cpu"
     PATH_DATA = "../data/"
-    NB_EPOCHS = 30
+    NB_EPOCHS = 3
     LEARNING_RATE = 0.001
 
     train_lab = pd.read_csv(PATH_DATA + 'train_labels.csv')["status_group"]
@@ -25,7 +26,6 @@ if __name__ == "__main__":
     train_set = preprocessing_data(train_set)
 
     train_set, test_set = train_test_split(train_set, test_size=0.2)
-
     train_target = tensor(train_set['status_group'].values)
     train = tensor(train_set.drop('status_group', axis=1).values)
     train_tensor = data_utils.TensorDataset(train, train_target)
@@ -41,7 +41,7 @@ if __name__ == "__main__":
                                         batch_size=10,
                                         shuffle=True)
 
-    model = Network(len(train_set.columns)-1)
+    model = Network(len(train_set.columns)-1, 256)
     model.to(DEVICE)
 
     opt = optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=5e-8)
@@ -49,8 +49,9 @@ if __name__ == "__main__":
 
     classes, rep = unique(train_target, sorted=True, return_counts=True)
     weights = true_divide(rep.sum(), rep).to(DEVICE)
-    criterion = nn.CrossEntropyLoss(weight=weights)
+    criterion = nn.CrossEntropyLoss()  # weight=weights
 
+    losses_train, losses_test, acc = [], [], []
     for epoch in range(NB_EPOCHS):
         loss_train, loss_test = 0, 0
         acc_test = 0
@@ -75,10 +76,32 @@ if __name__ == "__main__":
 
         loss_train /= len(train_loader)
         loss_test /= len(test_loader)
+        ratio = 100*acc_test/len(test_set)
         scheduler.step(loss_test)
+        losses_train.append(loss_train)
+        losses_test.append(loss_test)
+        acc.append(ratio)
+
         print(f'| Epoch: {epoch+1} | Train Loss: {loss_train:.3f} |'
               f"Test Loss: {loss_test:.3f} | Acc Test: {acc_test:.0f}"
-              f"/{len(test_set):.0f}")
+              f"/{len(test_set):.0f} ({ratio:.2f}%)")
+    x = range(NB_EPOCHS)
+
+    ax = figure().gca()
+    ax.plot(losses_train, label='Train_loss')
+    ax.plot(losses_test, label='Test Loss')
+    ax.legend()
+    title("Evolution des loss")
+    ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+    xlabel("Epochs")
+    show()
+
+    ax = figure().gca()
+    ax.plot(acc, label="Accuracy")
+    title("Cas corrects")
+    ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+    xlabel("Epochs")
+    show()
 
     CHECKPOINT = {'model': model,
                   'state_dict': model.state_dict(),
