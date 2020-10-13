@@ -21,13 +21,12 @@ def preprocessing_data(data, test=False):
     data.drop_duplicates(inplace=True)
 
     # Drop columns
-    data.drop(["amount_tsh", "recorded_by", "funder", "installer",
-               "num_private", "region_code", "district_code",
-               "ward", "scheme_name", "wpt_name", "lga", "extraction_type",
+    data.drop(["amount_tsh", "recorded_by", "funder", "installer", "lga",
+               "num_private", "region_code", "district_code", "id",
+               "ward", "scheme_name", "wpt_name", "extraction_type_class",
                "extraction_type_group", "payment_type", "management",
                "water_quality", "quantity_group", "source", "source_class",
-               "waterpoint_type",  "population",
-               "public_meeting", "management_group", "id"],
+               "waterpoint_type_group", "population", "management_group"],
               axis=1, inplace=True)
 
     # Replace missing values
@@ -89,10 +88,10 @@ def preprocessing_data(data, test=False):
 
     # One hot encoding
     data = pd.get_dummies(data, columns=["source_type", "scheme_management",
-                                         "payment", "extraction_type_class",
-                                         "waterpoint_type_group", "quantity",
+                                         "payment", "extraction_type",
+                                         "waterpoint_type", "quantity",
                                          "quality_group", "basin", "region",
-                                         "permit"])
+                                         "permit", "public_meeting"])
     data.date_recorded = pd.DatetimeIndex(data.date_recorded).month
 
     # Numerical values
