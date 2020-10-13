@@ -49,6 +49,7 @@ def preprocessing_data(data, test=False):
         vill.to_csv(PATH_PREPRO + "villages.csv", index=False)
         regions = vill.groupby(["region"], as_index=False).mean()
         regions.to_csv(PATH_PREPRO + "regions.csv", index=False)
+
     else:
         vill.read_csv(PATH_PREPRO + "villages.csv")
         regions.read_csv(PATH_PREPRO + "regions.csv")
@@ -86,7 +87,6 @@ def preprocessing_data(data, test=False):
 
     data.drop(["subvillage", "key"], axis=1, inplace=True)
 
-    data.to_csv("../postpro.csv")
     # One hot encoding
     data = pd.get_dummies(data, columns=["source_type", "scheme_management",
                                          "payment", "extraction_type_class",
@@ -104,11 +104,11 @@ def preprocessing_data(data, test=False):
             dic[cl] = {"min": min_col, "max": max_col}
             data[cl] = (data[cl] - min_col)/(max_col - min_col)
 
-        with open('./prepro.pickle', 'wb') as handle:
+        with open(PATH_PREPRO + 'prepro.pickle', 'wb') as handle:
             dump(dic, handle, protocol=HIGHEST_PROTOCOL)
 
     else:  # Testing, load values
-        with open('./prepro.pickle', 'rb') as handle:
+        with open(PATH_PREPRO + 'prepro.pickle', 'rb') as handle:
             dic = load(handle)
 
         for cl in ["gps_height", "longitude", "latitude", "construction_year"]:
