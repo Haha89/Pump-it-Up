@@ -2,12 +2,12 @@
 
 from numpy import power
 import pandas as pd
-from utils import preprocessing_data
+from utils import preprocessing_data, create_village_region_files
 import lightgbm as lgb
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix
 
-SUBMIT = False
+SUBMIT = True
 PATH_DATA = "../data/"
 
 
@@ -26,14 +26,14 @@ if __name__ == "__main__":
     clf = lgb.LGBMClassifier(max_bin=1500, num_leaves=180,
                              learning_rate=0.0085, num_iterations=2150)
 
-    # params = {'colsample_bytree': 0.6765, 'max_bin': 2013,
-    #           'min_child_samples': 122, 'min_child_weight': 10.0,
-    #           'num_leaves': 442, 'reg_alpha': 0.1, 'reg_lambda': 10,
-    #           'subsample': 0.28234, "random_state": 314,
-    #           'metric': 'None', 'n_jobs': 4, 'n_estimators': 5000}
+    params = {'colsample_bytree': 0.6765, 'max_bin': 2013,
+              'min_child_samples': 122, 'min_child_weight': 10.0,
+              'num_leaves': 442, 'reg_alpha': 0.1, 'reg_lambda': 10,
+              'subsample': 0.28234, "random_state": 314,
+              'metric': 'None', 'n_jobs': 4, 'n_estimators': 5000}
 
-    # clf = lgb.LGBMClassifier()
-    # clf.set_params(**params)
+    clf = lgb.LGBMClassifier()
+    clf.set_params(**params)
 
     if not SUBMIT:
         train_set, test_set = train_test_split(train_set, test_size=0.2)
@@ -41,6 +41,7 @@ if __name__ == "__main__":
         test_val = test_set.drop('status_group', axis=1)
 
     else:
+        create_village_region_files(PATH_DATA)
         test_val = pd.read_csv(PATH_DATA + 'test_values.csv')
         test_val = preprocessing_data(test_val, test=True)
 

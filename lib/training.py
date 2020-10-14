@@ -15,22 +15,21 @@ from matplotlib.ticker import MaxNLocator
 if __name__ == "__main__":
     DEVICE = "cuda" if cuda.is_available() else "cpu"
     PATH_DATA = "../data/"
-    NB_EPOCHS = 3
+    NB_EPOCHS = 150
     LEARNING_RATE = 0.001
 
     train_lab = pd.read_csv(PATH_DATA + 'train_labels.csv')["status_group"]
     train_val = pd.read_csv(PATH_DATA + 'train_values.csv')
 
     train_set = pd.concat([train_val, train_lab], axis=1)
-
     train_set = preprocessing_data(train_set)
-
     train_set, test_set = train_test_split(train_set, test_size=0.2)
+
     train_target = tensor(train_set['status_group'].values)
     train = tensor(train_set.drop('status_group', axis=1).values)
     train_tensor = data_utils.TensorDataset(train, train_target)
     train_loader = data_utils.DataLoader(dataset=train_tensor,
-                                         batch_size=10,
+                                         batch_size=4096,
                                          shuffle=True)
 
     # Validation
@@ -38,10 +37,9 @@ if __name__ == "__main__":
     test = tensor(test_set.drop('status_group', axis=1).values)
     test_tensor = data_utils.TensorDataset(test, test_target)
     test_loader = data_utils.DataLoader(dataset=test_tensor,
-                                        batch_size=10,
-                                        shuffle=True)
+                                        batch_size=2048)
 
-    model = Network(len(train_set.columns)-1, 256)
+    model = Network(len(train_set.columns)-1, 400)
     model.to(DEVICE)
 
     opt = optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=5e-8)
@@ -49,7 +47,7 @@ if __name__ == "__main__":
 
     classes, rep = unique(train_target, sorted=True, return_counts=True)
     weights = true_divide(rep.sum(), rep).to(DEVICE)
-    criterion = nn.CrossEntropyLoss()  # weight=weights
+    criterion = nn.CrossEntropyLoss()  #weight=weights
 
     losses_train, losses_test, acc = [], [], []
     for epoch in range(NB_EPOCHS):
@@ -85,7 +83,6 @@ if __name__ == "__main__":
         print(f'| Epoch: {epoch+1} | Train Loss: {loss_train:.3f} |'
               f"Test Loss: {loss_test:.3f} | Acc Test: {acc_test:.0f}"
               f"/{len(test_set):.0f} ({ratio:.2f}%)")
-    x = range(NB_EPOCHS)
 
     ax = figure().gca()
     ax.plot(losses_train, label='Train_loss')
