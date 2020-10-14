@@ -17,6 +17,8 @@ if __name__ == "__main__":
     PATH_DATA = "../data/"
     NB_EPOCHS = 150
     LEARNING_RATE = 0.001
+    BATCH_SIZE = 4096*2
+    PAR_NETWORK = 256
 
     train_lab = pd.read_csv(PATH_DATA + 'train_labels.csv')["status_group"]
     train_val = pd.read_csv(PATH_DATA + 'train_values.csv')
@@ -29,7 +31,7 @@ if __name__ == "__main__":
     train = tensor(train_set.drop('status_group', axis=1).values)
     train_tensor = data_utils.TensorDataset(train, train_target)
     train_loader = data_utils.DataLoader(dataset=train_tensor,
-                                         batch_size=4096,
+                                         batch_size=BATCH_SIZE,
                                          shuffle=True)
 
     # Validation
@@ -37,9 +39,9 @@ if __name__ == "__main__":
     test = tensor(test_set.drop('status_group', axis=1).values)
     test_tensor = data_utils.TensorDataset(test, test_target)
     test_loader = data_utils.DataLoader(dataset=test_tensor,
-                                        batch_size=2048)
+                                        batch_size=BATCH_SIZE)
 
-    model = Network(len(train_set.columns)-1, 400)
+    model = Network(len(train_set.columns)-1, PAR_NETWORK)
     model.to(DEVICE)
 
     opt = optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=5e-8)
@@ -47,7 +49,7 @@ if __name__ == "__main__":
 
     classes, rep = unique(train_target, sorted=True, return_counts=True)
     weights = true_divide(rep.sum(), rep).to(DEVICE)
-    criterion = nn.CrossEntropyLoss()  #weight=weights
+    criterion = nn.CrossEntropyLoss()  # weight=weights
 
     losses_train, losses_test, acc = [], [], []
     for epoch in range(NB_EPOCHS):

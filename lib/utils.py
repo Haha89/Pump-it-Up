@@ -26,7 +26,7 @@ def preprocessing_data(data, test=False):
                "ward", "scheme_name", "wpt_name", "extraction_type_class",
                "extraction_type_group", "payment_type", "management",
                "water_quality", "quantity_group", "source", "source_class",
-               "waterpoint_type_group", "management_group"],  # , "population"
+               "waterpoint_type_group", "management_group", "population"], 
               axis=1, inplace=True)
 
     # Replace missing values
@@ -79,10 +79,10 @@ def preprocessing_data(data, test=False):
                                          "payment", "extraction_type",
                                          "waterpoint_type", "quantity",
                                          "quality_group", "basin", "region"])
+
     data.date_recorded = pd.DatetimeIndex(data.date_recorded).month
-    
-    data.permit = data.permit.map({True: 1, False: 0})
-    data.public_meeting = data.public_meeting.map({True: 1, False: 0})
+    data.permit = data.permit.astype(bool).map({True: 1, False: 0})
+    data.public_meeting = data.public_meeting.astype(bool).map({True: 1, False: 0})
     data.amount_tsh = data.amount_tsh.map(lambda x: 1 if x >= 2e4 else 0)
 
     # Numerical values
@@ -111,10 +111,8 @@ def preprocessing_data(data, test=False):
                "functional needs repair": 1,
                "non functional": 0}
         data.status_group = data.status_group.map(dic)
-    
-    data.drop(["gps_height"], axis=1, inplace=True)
-    return data
 
+    return data
 
 
 def create_village_region_files(path_inputs):
@@ -123,8 +121,7 @@ def create_village_region_files(path_inputs):
     test_val = pd.read_csv(path_inputs + 'test_values.csv')
     data = pd.concat([train_val, test_val])
     vill = data[data.longitude > 0][["region", "subvillage",
-                                         "longitude", "latitude",
-                                         "gps_height"]]
+                                     "longitude", "latitude", "gps_height"]]
     vill = vill.groupby(["region", "subvillage"], as_index=False).mean()
     vill["key"] = vill.subvillage + vill.region
     vill.to_csv(PATH_PREPRO + "villages.csv", index=False)
