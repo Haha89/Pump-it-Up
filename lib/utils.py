@@ -9,6 +9,7 @@ PATH_PREPRO = "../data/preprocessing/"
 
 
 def generate_report(dataframe, name="PumpItUp-EDA"):
+    """Generate a report using Pandas profiling"""
     import pandas_profiling as pdp
     profile_train_df = pdp.ProfileReport(dataframe,
                                          title="Pandas Profiling Report",
@@ -17,11 +18,11 @@ def generate_report(dataframe, name="PumpItUp-EDA"):
 
 
 def preprocessing_data(data, test=False):
-    """input"""
+    """Preprocesses the input. If test is true, loads existing data"""
     data.drop_duplicates(inplace=True)
 
     # Drop columns
-    data.drop(["recorded_by", "funder", "installer", "lga",
+    data.drop(["recorded_by", "installer", "lga",
                "num_private", "region_code", "district_code", "id",
                "ward", "scheme_name", "wpt_name", "extraction_type_class",
                "extraction_type_group", "payment_type", "management",
@@ -35,15 +36,13 @@ def preprocessing_data(data, test=False):
               "permit": True}
     data.fillna(value=values)
 
-    
-
     vill = pd.read_csv(PATH_PREPRO + "villages.csv")
     regions = pd.read_csv(PATH_PREPRO + "regions.csv")
     constructions_years = pd.read_csv(PATH_PREPRO + "construction_year.csv")
     constructions_years_regions = pd.read_csv(PATH_PREPRO + "construction_year_regions.csv")
-    
+
     data['key'] = data.subvillage + data.region
-    
+
     data['gps_height'] = np.where((data['latitude'] > -.5) & (data['gps_height'] < 1),
                                   data["key"].map(
                                       vill.set_index("key")['gps_height']),
@@ -73,24 +72,22 @@ def preprocessing_data(data, test=False):
                                 data["region"].map(
                                     regions.set_index("region")['latitude']),
                                 data['latitude'])
-    
-    data['construction_year'] = np.where(data['construction_year'] < 1,
-                                data["key"].map(
-                                    constructions_years.set_index("key")['construction_year']),
-                                data['construction_year'])
-    
-    # data['construction_year'] = np.where(data['construction_year'].isnull(),
-    #                             1994,
-    #                             data['construction_year'])
-    data.at[data.construction_year.isnull(), "construction_year"] = 1994
-    data.drop(["subvillage", "key"], axis=1, inplace=True)
 
+    data['construction_year'] = np.where(data['construction_year'] < 1,
+                                         data["key"].map(
+                                             constructions_years.set_index("key")['construction_year']),
+                                         data['construction_year'])
+
+    data.at[data.construction_year.isnull(), "construction_year"] = 1994
+
+    data['funder'] = data.apply(lambda row: funder_wrangler(row), axis=1)
     # One hot encoding
     data = pd.get_dummies(data, columns=["source_type", "scheme_management",
                                          "payment", "extraction_type",
                                          "waterpoint_type", "quantity",
-                                         "quality_group", "basin", "region"])
+                                         "quality_group", "basin", 'funder'])
 
+    data["year_recorded"] = pd.DatetimeIndex(data.date_recorded).year
     data.date_recorded = pd.DatetimeIndex(data.date_recorded).month
     dic_tf = {True: 1, False: 0}
     data.permit = data.permit.astype(bool).map(dic_tf)
@@ -123,6 +120,7 @@ def preprocessing_data(data, test=False):
                "functional needs repair": 1,
                "non functional": 0}
         data.status_group = data.status_group.map(dic)
+    data.drop(["subvillage", "key", "region"], axis=1, inplace=True)
 
     return data
 
@@ -145,11 +143,34 @@ def create_village_region_files(path_inputs):
 
     const_dates = data[data.construction_year > 0][["region", "subvillage",
                                                     "construction_year"]]
-    const_dates = const_dates.groupby(["region", "subvillage"], as_index=False).mean()
+    const_dates = const_dates.groupby(["region",
+                                       "subvillage"], as_index=False).mean()
     const_dates["key"] = const_dates.subvillage + const_dates.region
     const_dates.to_csv(PATH_PREPRO + "construction_year.csv", index=False)
     regions = const_dates.groupby(["region"], as_index=False).mean()
     regions.to_csv(PATH_PREPRO + "construction_year_regions.csv", index=False)
+
+
+def funder_wrangler(row):
+    '''Keep top 8 values and set the rest to 'other'''
+    if row['funder'] == 'Government Of Tanzania':
+        return 'gov'
+    elif row['funder'] == 'Danida':
+        return 'danida'
+    elif row['funder'] == 'Hesawa':
+        return 'hesawa'
+    elif row['funder'] == 'Rwssp':
+        return 'rwssp'
+    elif row['funder'] == 'World Bank':
+        return 'world_bank'
+    elif row['funder'] == 'Kkkt':
+        return 'kkkt'
+    elif row['funder'] == 'World Vision':
+        return 'world_vision'
+    elif row['funder'] == 'Unicef':
+        return 'unicef'
+    else:
+        return 'other'
 
 
 # Creation du reseau

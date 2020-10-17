@@ -23,17 +23,15 @@ if __name__ == "__main__":
     train_set = pd.concat([train_val, train_lab], axis=1)
     train_set = preprocessing_data(train_set)
 
-    clf = lgb.LGBMClassifier(max_bin=1800, num_leaves=200,
-                             learning_rate=0.0085, num_iterations=2150)
+    params = {'colsample_bytree': 0.6765, 'max_bin': 2013,
+              'min_child_samples': 122, 'min_child_weight': 10.0,
+              'num_leaves': 442, 'reg_alpha': 0.1, 'reg_lambda': 10,
+              'subsample': 0.28234, "random_state": 314,
+              'metric': 'None', 'n_jobs': 4, 'n_estimators': 5000,
+              'learning_rate': 0.0085, 'num_iterations': 2150}
 
-    # params = {'colsample_bytree': 0.6765, 'max_bin': 2013,
-    #           'min_child_samples': 122, 'min_child_weight': 10.0,
-    #           'num_leaves': 442, 'reg_alpha': 0.1, 'reg_lambda': 10,
-    #           'subsample': 0.28234, "random_state": 314,
-    #           'metric': 'None', 'n_jobs': 4, 'n_estimators': 5000}
-
-    # clf = lgb.LGBMClassifier()
-    # clf.set_params(**params)
+    clf = lgb.LGBMClassifier()
+    clf.set_params(**params)
 
     if not SUBMIT:
         train_set, test_set = train_test_split(train_set, test_size=0.2)
@@ -63,7 +61,7 @@ if __name__ == "__main__":
         print(f"Accuracy: {correct}/{len(test_target)} ({ratio}%)")
         print(confusion_matrix(test_target, y_pred))
         feat_imp = pd.Series(clf.feature_importances_, index=train.columns)
-        feat_imp.nlargest(20).plot(kind='barh', figsize=(8, 10))
+        feat_imp.nlargest(30).plot(kind='barh', figsize=(10, 20))
 
     else:
         submission = pd.read_csv(PATH_DATA + 'SubmissionFormat.csv')
