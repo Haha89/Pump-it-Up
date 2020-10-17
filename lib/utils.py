@@ -26,22 +26,24 @@ def preprocessing_data(data, test=False):
                "ward", "scheme_name", "wpt_name", "extraction_type_class",
                "extraction_type_group", "payment_type", "management",
                "water_quality", "quantity_group", "source", "source_class",
-               "waterpoint_type_group", "management_group", "population"], 
+               "waterpoint_type_group", "management_group", "population"],
               axis=1, inplace=True)
 
     # Replace missing values
     values = {'funder': "Unknown", 'installer': "DWE",
               'public_meeting': True, 'scheme_management': "VWC",
-              "construction_year": 1994, "permit": True}
+              "permit": True}
     data.fillna(value=values)
 
-    data.permit = data.permit.astype(bool)
-    data.at[data.construction_year == 0, "construction_year"] = 1994
+    
 
     vill = pd.read_csv(PATH_PREPRO + "villages.csv")
     regions = pd.read_csv(PATH_PREPRO + "regions.csv")
-
+    constructions_years = pd.read_csv(PATH_PREPRO + "construction_year.csv")
+    constructions_years_regions = pd.read_csv(PATH_PREPRO + "construction_year_regions.csv")
+    
     data['key'] = data.subvillage + data.region
+    
     data['gps_height'] = np.where((data['latitude'] > -.5) & (data['gps_height'] < 1),
                                   data["key"].map(
                                       vill.set_index("key")['gps_height']),
@@ -71,7 +73,16 @@ def preprocessing_data(data, test=False):
                                 data["region"].map(
                                     regions.set_index("region")['latitude']),
                                 data['latitude'])
-
+    
+    data['construction_year'] = np.where(data['construction_year'] < 1,
+                                data["key"].map(
+                                    constructions_years.set_index("key")['construction_year']),
+                                data['construction_year'])
+    
+    # data['construction_year'] = np.where(data['construction_year'].isnull(),
+    #                             1994,
+    #                             data['construction_year'])
+    data.at[data.construction_year.isnull(), "construction_year"] = 1994
     data.drop(["subvillage", "key"], axis=1, inplace=True)
 
     # One hot encoding
@@ -81,8 +92,9 @@ def preprocessing_data(data, test=False):
                                          "quality_group", "basin", "region"])
 
     data.date_recorded = pd.DatetimeIndex(data.date_recorded).month
-    data.permit = data.permit.astype(bool).map({True: 1, False: 0})
-    data.public_meeting = data.public_meeting.astype(bool).map({True: 1, False: 0})
+    dic_tf = {True: 1, False: 0}
+    data.permit = data.permit.astype(bool).map(dic_tf)
+    data.public_meeting = data.public_meeting.astype(bool).map(dic_tf)
     data.amount_tsh = data.amount_tsh.map(lambda x: 1 if x >= 2e4 else 0)
 
     # Numerical values
@@ -116,17 +128,28 @@ def preprocessing_data(data, test=False):
 
 
 def create_village_region_files(path_inputs):
-    "Opens train_values + test_values"
+    """Opens train_values + test_values, find all villages/region and
+    calculates average GPS locations"""
     train_val = pd.read_csv(path_inputs + 'train_values.csv')
     test_val = pd.read_csv(path_inputs + 'test_values.csv')
     data = pd.concat([train_val, test_val])
+
     vill = data[data.longitude > 0][["region", "subvillage",
                                      "longitude", "latitude", "gps_height"]]
     vill = vill.groupby(["region", "subvillage"], as_index=False).mean()
     vill["key"] = vill.subvillage + vill.region
     vill.to_csv(PATH_PREPRO + "villages.csv", index=False)
+
     regions = vill.groupby(["region"], as_index=False).mean()
     regions.to_csv(PATH_PREPRO + "regions.csv", index=False)
+
+    const_dates = data[data.construction_year > 0][["region", "subvillage",
+                                                    "construction_year"]]
+    const_dates = const_dates.groupby(["region", "subvillage"], as_index=False).mean()
+    const_dates["key"] = const_dates.subvillage + const_dates.region
+    const_dates.to_csv(PATH_PREPRO + "construction_year.csv", index=False)
+    regions = const_dates.groupby(["region"], as_index=False).mean()
+    regions.to_csv(PATH_PREPRO + "construction_year_regions.csv", index=False)
 
 
 # Creation du reseau
@@ -144,7 +167,7 @@ class Network(nn.Module):
         self.bn1 = nn.BatchNorm1d(num_features=size)
         self.bn2 = nn.BatchNorm1d(num_features=size)
         self.bn3 = nn.BatchNorm1d(num_features=size)
-        # self.bn4 = nn.BatchNorm1d(num_features=size)
+        self.bn4 = nn.BatchNorm1d(num_features=size)
         self.bn5 = nn.BatchNorm1d(num_features=size)
         self.sigmoid = nn.Sigmoid()
 
@@ -158,11 +181,11 @@ class Network(nn.Module):
 
     def forward(self, x):
         x = self.bn1(F.relu(self.l1(x)))
-        x = self.bn2(self.sigmoid(self.l2(x)))
+        x = self.bn2(F.relu(self.l2(x)))
         x = self.dropout1(x)
         x = self.bn3(F.relu(self.l3(x)))
         x = self.dropout2(x)
-        x = self.sigmoid(self.l4(x))  # self.bn4()
+        x = self.bn4(F.relu(self.l4(x)))
         x = self.bn5(F.relu(self.l5(x)))
         x = self.dropout2(x)
         x = self.lout(x)

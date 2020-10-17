@@ -15,10 +15,10 @@ from matplotlib.ticker import MaxNLocator
 if __name__ == "__main__":
     DEVICE = "cuda" if cuda.is_available() else "cpu"
     PATH_DATA = "../data/"
-    NB_EPOCHS = 150
+    NB_EPOCHS = 80
     LEARNING_RATE = 0.001
-    BATCH_SIZE = 4096*2
-    PAR_NETWORK = 256
+    BATCH_SIZE = 4096*8
+    PAR_NETWORK = 400
 
     train_lab = pd.read_csv(PATH_DATA + 'train_labels.csv')["status_group"]
     train_val = pd.read_csv(PATH_DATA + 'train_values.csv')

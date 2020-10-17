@@ -7,7 +7,7 @@ import lightgbm as lgb
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix
 
-SUBMIT = True
+SUBMIT = False
 PATH_DATA = "../data/"
 
 
@@ -16,24 +16,24 @@ def lr_decay(current_iter):
 
 
 if __name__ == "__main__":
-
+    # create_village_region_files(PATH_DATA)
     train_lab = pd.read_csv(PATH_DATA + 'train_labels.csv')["status_group"]
     train_val = pd.read_csv(PATH_DATA + 'train_values.csv')
 
     train_set = pd.concat([train_val, train_lab], axis=1)
     train_set = preprocessing_data(train_set)
 
-    clf = lgb.LGBMClassifier(max_bin=1500, num_leaves=180,
+    clf = lgb.LGBMClassifier(max_bin=1800, num_leaves=200,
                              learning_rate=0.0085, num_iterations=2150)
 
-    params = {'colsample_bytree': 0.6765, 'max_bin': 2013,
-              'min_child_samples': 122, 'min_child_weight': 10.0,
-              'num_leaves': 442, 'reg_alpha': 0.1, 'reg_lambda': 10,
-              'subsample': 0.28234, "random_state": 314,
-              'metric': 'None', 'n_jobs': 4, 'n_estimators': 5000}
+    # params = {'colsample_bytree': 0.6765, 'max_bin': 2013,
+    #           'min_child_samples': 122, 'min_child_weight': 10.0,
+    #           'num_leaves': 442, 'reg_alpha': 0.1, 'reg_lambda': 10,
+    #           'subsample': 0.28234, "random_state": 314,
+    #           'metric': 'None', 'n_jobs': 4, 'n_estimators': 5000}
 
-    clf = lgb.LGBMClassifier()
-    clf.set_params(**params)
+    # clf = lgb.LGBMClassifier()
+    # clf.set_params(**params)
 
     if not SUBMIT:
         train_set, test_set = train_test_split(train_set, test_size=0.2)
@@ -41,7 +41,6 @@ if __name__ == "__main__":
         test_val = test_set.drop('status_group', axis=1)
 
     else:
-        create_village_region_files(PATH_DATA)
         test_val = pd.read_csv(PATH_DATA + 'test_values.csv')
         test_val = preprocessing_data(test_val, test=True)
 
