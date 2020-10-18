@@ -2,18 +2,13 @@
 
 from numpy import power
 import pandas as pd
-from utils import preprocessing_data, create_village_region_files
+from utils import preprocessing_data, create_village_region_files, lr_decay
 import lightgbm as lgb
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix
 
 SUBMIT = False
 PATH_DATA = "../data/"
-
-
-def lr_decay(current_iter):
-    return max(1e-3, 0.1 * power(.995, current_iter))
-
 
 if __name__ == "__main__":
     # create_village_region_files(PATH_DATA)

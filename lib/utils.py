@@ -211,3 +211,7 @@ class Network(nn.Module):
         x = self.dropout2(x)
         x = self.lout(x)
         return x
+
+
+def lr_decay(current_iter):
+    return max(1e-3, 0.1 * np.power(.995, current_iter))
