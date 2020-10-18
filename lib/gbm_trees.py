@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 
-from numpy import power
 import pandas as pd
 from utils import preprocessing_data, create_village_region_files, lr_decay
 import lightgbm as lgb
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix
 
-SUBMIT = False
+SUBMIT = True
 PATH_DATA = "../data/"
 
 if __name__ == "__main__":
@@ -43,7 +42,8 @@ if __name__ == "__main__":
     # add extra columns missings in the test set
     for col in train.columns:
         if col not in test_val.columns:
-            train = train.drop(col, axis=1)
+            test_val[col] = 0
+
     test_val = test_val[train.columns]
 
     clf.fit(train.values, train_target,

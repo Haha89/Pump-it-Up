@@ -39,7 +39,6 @@ def preprocessing_data(data, test=False):
     vill = pd.read_csv(PATH_PREPRO + "villages.csv")
     regions = pd.read_csv(PATH_PREPRO + "regions.csv")
     constructions_years = pd.read_csv(PATH_PREPRO + "construction_year.csv")
-    constructions_years_regions = pd.read_csv(PATH_PREPRO + "construction_year_regions.csv")
 
     data['key'] = data.subvillage + data.region
 
