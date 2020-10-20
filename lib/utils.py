@@ -4,6 +4,7 @@ import pandas as pd
 import torch.nn as nn
 import torch.nn.functional as F
 from pickle import load, dump, HIGHEST_PROTOCOL
+from datetime import datetime
 
 PATH_PREPRO = "../data/preprocessing/"
 
@@ -22,7 +23,7 @@ def preprocessing_data(data, test=False):
     data.drop_duplicates(inplace=True)
 
     # Drop columns
-    data.drop(["recorded_by", "installer", "lga",
+    data.drop(["recorded_by", "lga",
                "num_private", "region_code", "district_code", "id",
                "ward", "scheme_name", "wpt_name", "extraction_type_class",
                "extraction_type_group", "payment_type", "management",
@@ -80,14 +81,23 @@ def preprocessing_data(data, test=False):
     data.at[data.construction_year.isnull(), "construction_year"] = 1994
 
     data['funder'] = data.apply(lambda row: funder_wrangler(row), axis=1)
+    data['installer'] = data.apply(lambda row: installer_wrangler(row), axis=1)
+    data['extraction_type'] = data.apply(lambda row:
+                                         extraction_type_wrangler(row), axis=1)
+
     # One hot encoding
     data = pd.get_dummies(data, columns=["source_type", "scheme_management",
-                                         "payment", "extraction_type",
-                                         "waterpoint_type", "quantity",
-                                         "quality_group", "basin", 'funder'])
+                                         "payment", "extraction_type", "basin",
+                                         "waterpoint_type", "quality_group",
+                                         "quantity", 'funder', "installer"])
 
     data["year_recorded"] = pd.DatetimeIndex(data.date_recorded).year
-    data.date_recorded = pd.DatetimeIndex(data.date_recorded).month
+    data["month_recorded"] = pd.DatetimeIndex(data.date_recorded).month
+    data['days_since_recorded'] = datetime(2014, 1, 1) - \
+        pd.to_datetime(data.date_recorded)
+    data['days_since_recorded'] = data['days_since_recorded']\
+        .astype('timedelta64[D]').astype(int)
+
     dic_tf = {True: 1, False: 0}
     data.permit = data.permit.astype(bool).map(dic_tf)
     data.public_meeting = data.public_meeting.astype(bool).map(dic_tf)
@@ -119,8 +129,9 @@ def preprocessing_data(data, test=False):
                "functional needs repair": 1,
                "non functional": 0}
         data.status_group = data.status_group.map(dic)
-    data.drop(["subvillage", "key", "region"], axis=1, inplace=True)
 
+    col_drop = ["subvillage", "key", "region", "date_recorded"]
+    data.drop(col_drop, axis=1, inplace=True)
     return data
 
 
@@ -146,30 +157,35 @@ def create_village_region_files(path_inputs):
                                        "subvillage"], as_index=False).mean()
     const_dates["key"] = const_dates.subvillage + const_dates.region
     const_dates.to_csv(PATH_PREPRO + "construction_year.csv", index=False)
-    regions = const_dates.groupby(["region"], as_index=False).mean()
-    regions.to_csv(PATH_PREPRO + "construction_year_regions.csv", index=False)
 
 
 def funder_wrangler(row):
     '''Keep top 8 values and set the rest to 'other'''
-    if row['funder'] == 'Government Of Tanzania':
-        return 'gov'
-    elif row['funder'] == 'Danida':
-        return 'danida'
-    elif row['funder'] == 'Hesawa':
-        return 'hesawa'
-    elif row['funder'] == 'Rwssp':
-        return 'rwssp'
-    elif row['funder'] == 'World Bank':
-        return 'world_bank'
-    elif row['funder'] == 'Kkkt':
-        return 'kkkt'
-    elif row['funder'] == 'World Vision':
-        return 'world_vision'
-    elif row['funder'] == 'Unicef':
-        return 'unicef'
+    dic = {'Government Of Tanzania': 'gov', 'Danida': 'danida', "Tasaf": "tas",
+           'Rwssp': 'rwssp', 'World Bank': 'world_bank', 'Hesawa': 'hesawa',
+           'Kkkt': 'kkkt', 'World Vision': 'world_vision', 'Unicef': 'unicef'}
+    return dic[row["funder"]] if row['funder'] in dic.keys() else 'other'
+
+
+def installer_wrangler(row):
+    '''Keep top 8 values and set the rest to 'other'''
+    dic = {'DWE': 'dwe', 'Government': 'gov', 'Commu': 'commu', 'TCRS': 'tcrs',
+           'DANIDA': 'danida', 'KKKT': 'kkkt', 'RWE': 'rwe', "Gover": "gov",
+           'Hesawa': 'hesawa', "Central government": "gov", "DANID": "danida"}
+    return dic[row["installer"]] if row['installer'] in dic.keys() else 'other'
+
+
+def extraction_type_wrangler(row):
+    '''Keep top 8 values and set the rest to 'other'''
+    dic = {'cemo': "other motorpump", 'climax': "other motorpump",
+           "other - mkulima/shinyanga": "other handpump", "swn 80": "swn",
+           "other - play pump": "other handpump",
+           "walimi": "other handpump", "other - swn 81": "swn",
+           "india mark ii": "india mark", "india mark iii": "india mark"}
+    if row['extraction_type'] in dic.keys():
+        return dic[row["extraction_type"]]
     else:
-        return 'other'
+        return row["extraction_type"]
 
 
 # Creation du reseau

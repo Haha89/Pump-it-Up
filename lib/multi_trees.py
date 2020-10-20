@@ -10,8 +10,8 @@ import warnings
 warnings.filterwarnings("ignore")
 
 PATH_DATA = "../data/"
-NB_FOLDS = 5
-SUBMIT = False
+NB_FOLDS = 8
+SUBMIT = True
 
 if __name__ == "__main__":
     # create_village_region_files(PATH_DATA)
@@ -25,7 +25,7 @@ if __name__ == "__main__":
               'min_child_samples': 122, 'min_child_weight': 10.0,
               'num_leaves': 442, 'reg_alpha': 0.1, 'reg_lambda': 10,
               'subsample': 0.28234, "random_state": 314,
-              'metric': 'None', 'n_jobs': 4, 'n_estimators': 5000,
+              'n_jobs': 4, 'n_estimators': 5000, "max_depth": 30,
               'learning_rate': 0.0085, 'num_iterations': 2150}
 
     kf = StratifiedKFold(n_splits=NB_FOLDS, shuffle=True, random_state=42)
@@ -58,7 +58,7 @@ if __name__ == "__main__":
 
         correct = len([i for i, j in zip(y_pred, test_target) if i == j])
         ratio = correct/len(test_target)*100
-        print(f"Accuracy f-{i}: {correct}/{len(test_target)} ({ratio:.2f}%)")
+        print(f"Accuracy f-{i}: {ratio:.3f}")
         clf.booster_.save_model(f'{PATH_DATA}model/tree_{i}.txt')
 
     # Submission
@@ -77,7 +77,6 @@ if __name__ == "__main__":
             preds += array(clf.predict(test_val))
 
         preds = argmax(preds, axis=1)
-
         submission = pd.read_csv(PATH_DATA + 'SubmissionFormat.csv')
         labels = ["non functional", "functional needs repair", "functional"]
         submission['status_group'] = list(map(lambda x: labels[x], preds))

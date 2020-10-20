@@ -5,8 +5,10 @@ from utils import preprocessing_data, create_village_region_files, lr_decay
 import lightgbm as lgb
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix
+import warnings
+warnings.filterwarnings("ignore")
 
-SUBMIT = True
+SUBMIT = False
 PATH_DATA = "../data/"
 
 if __name__ == "__main__":
