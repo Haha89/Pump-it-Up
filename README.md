@@ -50,3 +50,18 @@ The labels in this dataset are simple. There are three possible values:
     - **functional** - the waterpoint is operational and there are no repairs needed  
     - **functional needs repair** - the waterpoint is operational, but needs repairs  
     - **non functional** - the waterpoint is not operational  
+
+## Preprocessing of the data
+The preprocessing is done using the function preproecessing_data in the utils file.  
+Many features are highly correlated with others (like quality and quality_group). To avoid leakage we remove the following columns: "recorded_by", "lga", "num_private", "region_code", "district_code", "id", "ward", "scheme_name", "wpt_name", "extraction_type_class", 
+               "extraction_type_group", "payment_type", "management", "water_quality", "quantity_group", "source", "source_class",
+               "waterpoint_type_group", "management_group", "population", "subvillage", "key", "region", "date_recorded".  
+NA values are replaced by default values and we try to fill missing GPS locations by looking at wells in the same village.  
+Categorical features are one-hot encoded.  
+Two features are added: month_recorded and days_since_recorded (from Jan 1st 2014)
+Features gpds_height, longitude, latitude and construction_year are rescaled to [0,1]
+
+## Classification
+Decision trees from the library lightgbm are used. They are fast to learn and give better accuracy than xgboost trees.
+8 trees, trained on different slices of the dataset are used to predict the final state of each pump. Parameters of these trees were obtained through a grid search maximazing the accuracy. In this problem, the score is the number of correct predictions over the total number of predictions.   
+Once trained, we get a score on the hidden dataset of 0.8181, which ranks us 914/10179 (top 9%) in October 2020.
