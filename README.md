@@ -64,4 +64,4 @@ Features gpds_height, longitude, latitude and construction_year are rescaled to 
 ## Classification
 Decision trees from the library lightgbm are used. They are fast to learn and give better accuracy than xgboost trees.
 8 trees, trained on different slices of the dataset are used to predict the final state of each pump. Parameters of these trees were obtained through a grid search maximazing the accuracy. In this problem, the score is the number of correct predictions over the total number of predictions.   
-Once trained, we get a score on the hidden dataset of 0.8181, which ranks us 914/10179 (top 9%) in October 2020.
+Once trained, we get a score on the hidden dataset of **0.8181**, which ranks us 914/10179 **(top 9%)** in October 2020.
