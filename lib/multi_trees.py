@@ -11,7 +11,6 @@ warnings.filterwarnings("ignore")
 
 PATH_DATA = "../data/"
 NB_FOLDS = 8
-SUBMIT = True
 
 if __name__ == "__main__":
     # create_village_region_files(PATH_DATA)
@@ -62,22 +61,21 @@ if __name__ == "__main__":
         clf.booster_.save_model(f'{PATH_DATA}model/tree_{i}.txt')
 
     # Submission
-    if SUBMIT:
-        test_val = pd.read_csv(PATH_DATA + 'test_values.csv')
-        test_val = preprocessing_data(test_val, test=True)
+    test_val = pd.read_csv(PATH_DATA + 'test_values.csv')
+    test_val = preprocessing_data(test_val, test=True)
 
-        for col in dataset_values.columns:
-            if col not in test_val.columns:
-                test_val[col] = 0
-        test_val = test_val[dataset_values.columns]
+    for col in dataset_values.columns:
+        if col not in test_val.columns:
+            test_val[col] = 0
+    test_val = test_val[dataset_values.columns]
 
-        preds = zeros((len(test_val), 3), dtype=float)
-        for fold in range(1, NB_FOLDS+1):
-            clf = lgb.Booster(model_file=PATH_DATA+f'model/tree_{fold}.txt')
-            preds += array(clf.predict(test_val))
+    preds = zeros((len(test_val), 3), dtype=float)
+    for fold in range(1, NB_FOLDS+1):
+        clf = lgb.Booster(model_file=PATH_DATA+f'model/tree_{fold}.txt')
+        preds += array(clf.predict(test_val))
 
-        preds = argmax(preds, axis=1)
-        submission = pd.read_csv(PATH_DATA + 'SubmissionFormat.csv')
-        labels = ["non functional", "functional needs repair", "functional"]
-        submission['status_group'] = list(map(lambda x: labels[x], preds))
-        submission.to_csv("../data/submission.csv", index=False)
+    preds = argmax(preds, axis=1)
+    submission = pd.read_csv(PATH_DATA + 'SubmissionFormat.csv')
+    labels = ["non functional", "functional needs repair", "functional"]
+    submission['status_group'] = list(map(lambda x: labels[x], preds))
+    submission.to_csv("../data/submission.csv", index=False)
