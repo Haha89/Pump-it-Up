@@ -188,45 +188,5 @@ def extraction_type_wrangler(row):
         return row["extraction_type"]
 
 
-# Creation du reseau
-class Network(nn.Module):
-    def __init__(self, input_dim, size):
-        super(Network, self).__init__()
-        self.l1 = nn.Linear(input_dim, size)
-        self.l2 = nn.Linear(size, size)
-        self.l3 = nn.Linear(size, size)
-        self.l4 = nn.Linear(size, size)
-        self.l5 = nn.Linear(size, size)
-        self.lout = nn.Linear(size, 3)
-        self.dropout1 = nn.Dropout2d(0.25)
-        self.dropout2 = nn.Dropout2d(0.45)
-        self.bn1 = nn.BatchNorm1d(num_features=size)
-        self.bn2 = nn.BatchNorm1d(num_features=size)
-        self.bn3 = nn.BatchNorm1d(num_features=size)
-        self.bn4 = nn.BatchNorm1d(num_features=size)
-        self.bn5 = nn.BatchNorm1d(num_features=size)
-        self.sigmoid = nn.Sigmoid()
-
-        # init to normal
-        nn.init.normal_(self.l1.weight, mean=0, std=1.0)
-        nn.init.normal_(self.l2.weight, mean=0, std=1.0)
-        nn.init.normal_(self.l3.weight, mean=0, std=1.0)
-        nn.init.normal_(self.l4.weight, mean=0, std=1.0)
-        nn.init.normal_(self.l5.weight, mean=0, std=1.0)
-        nn.init.normal_(self.lout.weight, mean=0, std=1.0)
-
-    def forward(self, x):
-        x = self.bn1(F.relu(self.l1(x)))
-        x = self.bn2(F.relu(self.l2(x)))
-        x = self.dropout1(x)
-        x = self.bn3(F.relu(self.l3(x)))
-        x = self.dropout2(x)
-        x = self.bn4(F.relu(self.l4(x)))
-        x = self.bn5(F.relu(self.l5(x)))
-        x = self.dropout2(x)
-        x = self.lout(x)
-        return x
-
-
 def lr_decay(current_iter):
     return max(1e-3, 0.1 * np.power(.995, current_iter))
