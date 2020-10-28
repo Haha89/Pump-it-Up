@@ -78,4 +78,4 @@ if __name__ == "__main__":
     submission = pd.read_csv(PATH_DATA + 'SubmissionFormat.csv')
     labels = ["non functional", "functional needs repair", "functional"]
     submission['status_group'] = list(map(lambda x: labels[x], preds))
-    submission.to_csv("../data/submission.csv", index=False)
+    submission.to_csv(PATH_DATA + "submission.csv", index=False)
